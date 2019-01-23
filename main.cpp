@@ -1,9 +1,9 @@
-#include <iostream>
-
-using namespace std;
+#include "game.h"
 
 int main()
 {
-    cout << "Hello World!" << endl;
+    Game game;
+    while (game.isPlayed())
+        game.Tick();
     return 0;
 }

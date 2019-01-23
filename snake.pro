@@ -4,4 +4,14 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
-        main.cpp
+        main.cpp \
+    game.cpp \
+    cell.cpp \
+    input.cpp
+
+LIBS +=  -lncurses
+
+HEADERS += \
+    game.h \
+    cell.h \
+    input.h

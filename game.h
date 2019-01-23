@@ -2,13 +2,14 @@
 #define GAME_H
 
 #include <vector>
+#include <list>
 #include <ncurses.h>
 
 #include "cell.h"
 #include "input.h"
 
 using std::vector;
-
+using std::list;
 
 class Game
 {
@@ -16,7 +17,7 @@ class Game
     int m_speed;
     bool is_played;
     vector<vector<Cell>> field;
-    Point first, last;
+    list<Point> snake;
     Point deltaMove;
     Input input;
     void InitGraphics();

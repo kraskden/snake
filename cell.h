@@ -4,6 +4,7 @@
 struct Point {
     int x;
     int y;
+    Point(int a_x = 0, int a_y = 0) : x(a_x), y(a_y) {}
 };
 
 enum class CellType {

@@ -24,20 +24,25 @@ void Game::DrawField()
 
 void Game::SnakeMove()
 {
-    Point newHead;
-    newHead.x = first.x + deltaMove.x;
-    newHead.y = first.y + deltaMove.y;
+    Point &first = snake.front();
+    Point &last = snake.back();
+    Point newHead(first.x + deltaMove.x, first.y + deltaMove.y);
     if (newHead.x >= 0 && newHead.x < field[0].size() && newHead.y >= 0 && newHead.y < field.size()) {
         field[first.y][first.x] = CellType::Tail;
         field[newHead.y][newHead.x] = CellType::Head;
-        first = newHead;
+        field[last.y][last.x] = CellType::None;
         DrawPixel(newHead.x, newHead.y);
+        DrawPixel(first.x, first.y);
+        DrawPixel(last.x, last.y);
+        snake.push_front(newHead);
+        snake.pop_back();
     }
 }
 
 void Game::Tick()
 {
     time_t finish_time = clock() / (CLOCKS_PER_SEC / 1000) + m_speed;
+    input.setTime(m_speed);
     InputType inputType = input.getInput();
     time_t curr_time = clock() / (CLOCKS_PER_SEC / 1000);
     if (curr_time < finish_time)
@@ -49,22 +54,20 @@ void Game::Tick()
         }
     }
     SnakeMove();
+    m_speed *= 0.9;
 }
 
-Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(1000)
+Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(1000), is_played(true)
 {
     InitGraphics();
     field.resize(m_height);
     for (auto &subv: field) {
         subv.resize(m_width);
     }
-    first.x = m_width / 2;
-    first.y = m_height / 2;
-    last.x = first.x;
-    last.y = first.y;
+    snake.push_front(Point(m_width / 2, m_height / 2));
     deltaMove.x = 1;
     deltaMove.y = 0;
-    field[first.y][first.x].setType(CellType::Head);
+    field[m_width / 2][m_height / 2].setType(CellType::Head);
     input.setTime(m_speed);
     DrawField();
 }

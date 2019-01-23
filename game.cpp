@@ -3,6 +3,12 @@
 #include <chrono>
 #include <thread>
 
+void DestroyMoney(Game* game)
+{
+    game->field[game->m_money_y][game->m_money_x] = CellType::None;
+    game->DrawPixel(game->m_money_x, game->m_money_y);
+}
+
 void Game::InitNcursed()
 {
     initscr();
@@ -29,7 +35,7 @@ void Game::DrawHeader()
 {
     addch('+');
     for (int i = 0; i < m_width; ++i)
-        addch('-');
+        addch('+');
     addch('+');
     addch('\n');
 }
@@ -39,55 +45,97 @@ void Game::DrawField()
     move(0, 0);
     DrawHeader();
     for (int i = 0; i < m_height; ++i) {
-        addch('|');
+        addch('+');
         for (int j = 0; j < m_width; ++j) {
             addch(field[i][j]);
         }
-        addch('|');
+        addch('+');
         addch('\n');
     }
     DrawHeader();
     refresh();
 }
 
+void Game::DrawScore()
+{
+    std::string print = std::to_string(m_score);
+    move(m_score_coord.y, m_score_coord.x);
+    addstr(print.c_str());
+    refresh();
+}
+
+void Game::DrawBar()
+{
+    if (m_max_time == 0)
+        return;
+    move(m_time_bar_coord.y, m_time_bar_coord.x);
+    for (int i = 0; i < (m_time * 10 / m_max_time); ++i)
+        addch('|');
+    for (int i = (m_time * 10 / m_max_time); i < 10; ++i)
+        addch(' ');
+}
+
 void Game::SnakeMove()
 {
-    bool isFood, isWall, isTeleport;
+    bool isFood, isWall, isTeleportX, isTeleportY;
     Point &first = snake.front();
     Point &last = snake.back();
     Point newHead(first.x + deltaMove.x, first.y + deltaMove.y);
-    isTeleport = !(newHead.x >= 0 && newHead.x < m_width && newHead.y >= 0 && newHead.y < m_height);
-    if (!isTeleport) {
-        CellType next = field[newHead.y][newHead.x].getType();
-        isWall = (next == CellType::Wall) || (next == CellType::Tail);
-        isFood = next == CellType::Food;
-    }
+    isTeleportX = !(newHead.x >= 0 && newHead.x < m_width);
+    isTeleportY = !(newHead.y >= 0 && newHead.y < m_height);
+    if (isTeleportX)
+        newHead.x = (newHead.x == -1) ? m_width - 1 : 0;
+    if (isTeleportY)
+        newHead.y = (newHead.y == -1) ? m_height - 1 : 0;
+    CellType next = field[newHead.y][newHead.x].getType();
+    isWall = (next == CellType::Wall) || (next == CellType::Tail);
+    isFood = next == CellType::Food;
     if (isWall) {
         is_played = false;
         return;
     }
-    if (!isTeleport) {
-        field[first.y][first.x] = CellType::Tail;
-        field[newHead.y][newHead.x] = CellType::Head;
-        if (!isFood)
-            field[last.y][last.x] = CellType::None;
-        DrawPixel(newHead.x, newHead.y);
-        DrawPixel(first.x, first.y);
-        DrawPixel(last.x, last.y);
-        snake.push_front(newHead);
-        if (!isFood)
-            snake.pop_back();
+    if (next == CellType::Money) {
+        m_score += 5;
+        DrawScore();
+        m_time = 0;
+        m_time_bar_call = nullptr;
+        DrawBar();
+    }
+    field[first.y][first.x] = CellType::Tail;
+    field[newHead.y][newHead.x] = CellType::Head;
+    if (!isFood)
+        field[last.y][last.x] = CellType::None;
+    DrawPixel(newHead.x, newHead.y);
+    DrawPixel(first.x, first.y);
+    DrawPixel(last.x, last.y);
+    snake.push_front(newHead);
+    if (!isFood)
+        snake.pop_back();
+    else {
+        ++m_score;
+        DrawScore();
+        SpawnItem(CellType::Food);
+        if ((rand() % 100) < m_money_percentage) {
+            m_time = m_max_time = 15;
+            DrawBar();
+            m_time_bar_call = DestroyMoney;
+            SpawnItem(CellType::Money);
+        }
     }
 }
 
-void Game::SpawnFood()
+void Game::SpawnItem(CellType item)
 {
     int x, y;
     do {
         x = rand() % m_width;
         y = rand() % m_height;
     } while (field[y][x].getType() != CellType::None);
-    field[y][x].setType(CellType::Food);
+    field[y][x].setType(item);
+    if (item == CellType::Money) {
+        m_money_x = x;
+        m_money_y = y;
+    }
     DrawPixel(x, y);
 }
 
@@ -106,16 +154,24 @@ void Game::Tick()
         }
     }
     SnakeMove();
-    if ((rand() % 100) <= m_food_percentage)
-        SpawnFood();
-
+    if (m_time > 0) {
+        DrawBar();
+        if (--m_time == 0 && m_time_bar_call)
+            m_time_bar_call(this);
+    }
 }
 
-Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(400), m_food_percentage(20),
-    is_played(true)
+Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(200), m_money_percentage(20),
+    m_score(0), m_time_bar_call(nullptr), is_played(true)
 {
     srand(time(nullptr));
     InitNcursed();
     InitField();
     DrawField();
+    m_score_coord.x = m_width + 2 + 3;
+    m_score_coord.y = 2;
+    m_time_bar_coord.x = m_score_coord.x;
+    m_time_bar_coord.y = 3;
+    DrawScore();
+    SpawnItem(CellType::Food);
 }

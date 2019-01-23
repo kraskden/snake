@@ -6,12 +6,14 @@ Cell::operator char()
     case CellType::None:
         return ' ';
     case CellType::Head:
-        return '*';
+        return '%';
     case CellType::Tail:
         return '*';
     case CellType::Wall:
         return '#';
     case CellType::Food:
         return '@';
+    case CellType::Money:
+        return '$';
     }
 }

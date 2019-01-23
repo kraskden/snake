@@ -8,7 +8,7 @@ struct Point {
 };
 
 enum class CellType {
-    None, Head, Tail, Wall, Food
+    None, Head, Tail, Wall, Food, Money
 };
 
 class Cell {

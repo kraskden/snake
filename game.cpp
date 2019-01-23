@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-void Game::InitGraphics()
+void Game::InitNcursed()
 {
     initscr();
     keypad(stdscr, true);
@@ -11,32 +11,84 @@ void Game::InitGraphics()
     curs_set(0);
 }
 
+void Game::InitField()
+{
+    field.resize(m_height);
+    for (auto &subv: field) {
+        subv.resize(m_width);
+        for (auto &el : subv)
+            el = CellType::None;
+    }
+    snake.push_front(Point(m_width / 2, m_height / 2));
+    deltaMove.x = 1;
+    deltaMove.y = 0;
+    field[m_height / 2][m_width / 2].setType(CellType::Head);
+}
+
+void Game::DrawHeader()
+{
+    addch('+');
+    for (int i = 0; i < m_width; ++i)
+        addch('-');
+    addch('+');
+    addch('\n');
+}
+
 void Game::DrawField()
 {
-    for (int i = 0; i < field.size(); ++i) {
-        for (int j = 0; j < field[i].size(); ++j) {
-            move(i, j);
+    move(0, 0);
+    DrawHeader();
+    for (int i = 0; i < m_height; ++i) {
+        addch('|');
+        for (int j = 0; j < m_width; ++j) {
             addch(field[i][j]);
         }
+        addch('|');
+        addch('\n');
     }
+    DrawHeader();
     refresh();
 }
 
 void Game::SnakeMove()
 {
+    bool isFood, isWall, isTeleport;
     Point &first = snake.front();
     Point &last = snake.back();
     Point newHead(first.x + deltaMove.x, first.y + deltaMove.y);
-    if (newHead.x >= 0 && newHead.x < field[0].size() && newHead.y >= 0 && newHead.y < field.size()) {
+    isTeleport = !(newHead.x >= 0 && newHead.x < m_width && newHead.y >= 0 && newHead.y < m_height);
+    if (!isTeleport) {
+        CellType next = field[newHead.y][newHead.x].getType();
+        isWall = (next == CellType::Wall) || (next == CellType::Tail);
+        isFood = next == CellType::Food;
+    }
+    if (isWall) {
+        is_played = false;
+        return;
+    }
+    if (!isTeleport) {
         field[first.y][first.x] = CellType::Tail;
         field[newHead.y][newHead.x] = CellType::Head;
-        field[last.y][last.x] = CellType::None;
+        if (!isFood)
+            field[last.y][last.x] = CellType::None;
         DrawPixel(newHead.x, newHead.y);
         DrawPixel(first.x, first.y);
         DrawPixel(last.x, last.y);
         snake.push_front(newHead);
-        snake.pop_back();
+        if (!isFood)
+            snake.pop_back();
     }
+}
+
+void Game::SpawnFood()
+{
+    int x, y;
+    do {
+        x = rand() % m_width;
+        y = rand() % m_height;
+    } while (field[y][x].getType() != CellType::None);
+    field[y][x].setType(CellType::Food);
+    DrawPixel(x, y);
 }
 
 void Game::Tick()
@@ -54,22 +106,16 @@ void Game::Tick()
         }
     }
     SnakeMove();
-    m_speed *= 0.9;
+    if ((rand() % 100) <= m_food_percentage)
+        SpawnFood();
+
 }
 
-Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(1000), is_played(true)
+Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(400), m_food_percentage(20),
+    is_played(true)
 {
-    InitGraphics();
-    field.resize(m_height);
-    for (auto &subv: field) {
-        subv.resize(m_width);
-    }
-    snake.push_front(Point(m_width / 2, m_height / 2));
-    deltaMove.x = 1;
-    deltaMove.y = 0;
-    field[m_width / 2][m_height / 2].setType(CellType::Head);
-    input.setTime(m_speed);
+    srand(time(nullptr));
+    InitNcursed();
+    InitField();
     DrawField();
 }
-
-

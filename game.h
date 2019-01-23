@@ -14,17 +14,20 @@ using std::list;
 class Game
 {
     int m_width, m_height;
-    int m_speed;
+    int m_speed, m_food_percentage;
     bool is_played;
     vector<vector<Cell>> field;
     list<Point> snake;
     Point deltaMove;
     Input input;
-    void InitGraphics();
+    void InitNcursed();
+    void InitField();
+    void DrawHeader();
     void DrawField();
     void SnakeMove();
+    void SpawnFood();
     inline void DrawPixel(int x, int y) {
-        move(y, x);
+        move(y + 1, x + 1);
         addch(field[y][x]);
         refresh();
     }

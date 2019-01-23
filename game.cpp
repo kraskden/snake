@@ -152,6 +152,18 @@ void Game::Tick()
         if ((deltaMove.x != -delta.x) && (deltaMove.y != -delta.y)) {
             deltaMove = delta;
         }
+    } else {
+        switch (input.getCommand()) {
+        case InputCommand::Quit:
+            is_played = false;
+            break;
+        case InputCommand::Pause:
+            // Fail
+            break;
+        case InputCommand::Resize:
+            DrawField();
+            break;
+        }
     }
     SnakeMove();
     if (m_time > 0) {
@@ -164,6 +176,7 @@ void Game::Tick()
 Game::Game(int width, int height) : m_width(width), m_height(height), m_speed(200), m_money_percentage(20),
     m_score(0), m_time_bar_call(nullptr), is_played(true)
 {
+    input.setTime(m_speed);
     srand(time(nullptr));
     InitNcursed();
     InitField();

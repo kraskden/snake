@@ -4,11 +4,11 @@
 #include "cell.h"
 
 enum class InputType {
-    Move, Command
+    Move, Command, Nop
 };
 
 enum class InputCommand {
-    Pause, Quit
+    Pause, Quit, Resize
 };
 
 class Input {

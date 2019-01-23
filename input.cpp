@@ -27,6 +27,20 @@ InputType Input::getInput()
         m_move.x = 1;
         m_move.y = 0;
         break;
+    case KEY_RESIZE:
+        res = InputType::Command;
+        m_cmd = InputCommand::Resize;
+        break;
+    case 'p':
+        res = InputType::Command;
+        m_cmd = InputCommand::Pause;
+        break;
+    case 'q':
+        res = InputType::Command;
+        m_cmd = InputCommand::Quit;
+        break;
+    default:
+        res = InputType::Nop;
     }
     return res;
 }

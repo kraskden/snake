@@ -15,6 +15,13 @@ void Game::InitNcursed()
     keypad(stdscr, true);
     noecho();
     curs_set(0);
+    start_color();
+    init_pair(static_cast<short>(CellType::Head), COLOR_YELLOW, COLOR_BLACK);
+    init_pair(static_cast<short>(CellType::Food), COLOR_CYAN, COLOR_BLACK);
+    init_pair(static_cast<short>(CellType::Tail), COLOR_WHITE, COLOR_BLACK);
+    init_pair(static_cast<short>(CellType::Wall), COLOR_GREEN, COLOR_BLACK);
+    init_pair(static_cast<short>(CellType::Money), COLOR_RED, COLOR_BLACK);
+    attrset(COLOR_PAIR(0));
 }
 
 void Game::InitField()
@@ -47,7 +54,10 @@ void Game::DrawField()
     for (int i = 0; i < m_height; ++i) {
         addch('+');
         for (int j = 0; j < m_width; ++j) {
+            short type = static_cast<short>(field[i][j].getType());
+            attrset(COLOR_PAIR(type));
             addch(field[i][j]);
+            attrset(COLOR_PAIR(0)); // To default
         }
         addch('+');
         addch('\n');
@@ -115,7 +125,7 @@ void Game::SnakeMove()
         ++m_score;
         DrawScore();
         SpawnItem(CellType::Food);
-        if ((rand() % 100) < m_money_percentage) {
+        if ((rand() % 100) < m_money_percentage && m_time == 0) {
             m_time = m_max_time = 15;
             DrawBar();
             m_time_bar_call = DestroyMoney;
@@ -127,10 +137,13 @@ void Game::SnakeMove()
 void Game::SpawnItem(CellType item)
 {
     int x, y;
+    int try_spawn = 0;
     do {
         x = rand() % m_width;
         y = rand() % m_height;
-    } while (field[y][x].getType() != CellType::None);
+    } while (field[y][x].getType() != CellType::None && (++try_spawn < 10));
+    if (try_spawn == 10)
+        return;
     field[y][x].setType(item);
     if (item == CellType::Money) {
         m_money_x = x;
@@ -152,15 +165,16 @@ void Game::Tick()
         if ((deltaMove.x != -delta.x) && (deltaMove.y != -delta.y)) {
             deltaMove = delta;
         }
-    } else {
+    } else if (inputType == InputType::Command) {
         switch (input.getCommand()) {
         case InputCommand::Quit:
             is_played = false;
             break;
         case InputCommand::Pause:
-            // Fail
+            while (input.getInput() != InputType::Command || input.getCommand() != InputCommand::Pause) {}
             break;
         case InputCommand::Resize:
+            clear();
             DrawField();
             break;
         }

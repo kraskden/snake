@@ -38,7 +38,10 @@ class Game
     void SpawnItem(CellType item);
     inline void DrawPixel(int x, int y) {
         move(y + 1, x + 1);
+        short type = static_cast<short>(field[y][x].getType());
+        attrset(COLOR_PAIR(type));
         addch(field[y][x]);
+        attrset(COLOR_PAIR(0));
         refresh();
     }
 public:

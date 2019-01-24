@@ -11,6 +11,7 @@ enum class CellType {
     None, Head, Tail, Wall, Food, Money
 };
 
+
 class Cell {
     CellType m_type;
 public:
